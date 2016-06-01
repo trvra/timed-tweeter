@@ -1,0 +1,23 @@
+{
+  "name": "timed-tweeter",
+  "version": "0.0.0",
+  "description": "A tiny script to automatically post tweets on a schedule, sourced from a Google Sheet",
+  "main": "index.js",
+  "dependencies": {
+    "async": "^1.5.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trvra/timed-tweeter.git"
+  },
+  "author": "Trevor Adams <trevor.s.adams@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/trvra/timed-tweeter/issues"
+  },
+  "homepage": "https://github.com/trvra/timed-tweeter#readme"
+}
