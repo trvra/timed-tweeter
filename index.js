@@ -1,20 +1,45 @@
+#!/usr/bin/env node
+
 var
   _ = require('lodash'),
-  p_json = require('./package.json')
   async = require('async'),
-  twitter = require('twitter');
+  twitter = require('twitter'),
+  google_spreadsheet = require('google-spreadsheet'),
+  refresh_interval = process.env.REFRESH_INTERVAL || 5 * 60 * 1000;
 
 async.auto({
   fetch_sheet: function(callback) {
-    console.log('This will fetch the Google Sheet');
-    // async code to fetch the sheet
-    console.log(process.env.GOOGLE_SHEET_ID);
-    callback(null);
+    if (!process.env.GOOGLE_SHEET_ID) {
+      return callback(new Error('GOOGLE_SHEET_ID: Google Sheet Id undefined'));
+    }
+    var
+      doc = new google_spreadsheet(process.env.GOOGLE_SHEET_ID),
+      formatted_rows = [];
+    doc.getRows(1, {}, function handleRows(error, rows) {
+      if (error) {
+        return callback(error);
+      }
+      formatted_rows = _.map(rows, function (row) {
+        return {
+          'date': Date.parse(row.date),
+          'tweet': row.tweet.slice(0, 140)
+        }
+      });
+      return callback(null, formatted_rows);
+    });
   },
-  check_times: ['fetch_sheet', function (results, callback) {
-    console.log('This will check sheet data for potential tweets');
-    // async code to search sheet data for potential tweets
-    callback(null);
+  check_times: ['fetch_sheet', function (callback, results) {
+    var
+      max_time = Date.now(),
+      min_time = max_time - refresh_interval,
+      tweets_to_send = [];
+    tweets_to_send = _.filter(results.fetch_sheet, function (tweet) {
+      console.log(min_time + "-" + max_time);
+      console.log(tweet.date);
+      return tweet.date > min_time && tweet.date < max_time;
+    });
+    tweets_to_send = _.map(tweets_to_send, "tweet");
+    return callback(null, tweets_to_send);
   }],
   auth_twitter: ['check_times', function (callback) {
     var
@@ -38,7 +63,7 @@ async.auto({
       access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
     }));
   }],
-  post_tweets: ['auth_twitter', function (results, callback) {
+  post_tweets: ['auth_twitter', function (callback, results) {
     var
       client = results.auth_twitter,
       params = {
@@ -56,7 +81,7 @@ async.auto({
       });
     }, callback);
   }],
-  report_back: ['post_tweets', function (results, callback) {
+  report_back: ['post_tweets', function (callback, results) {
     console.log('This will report a status back to the Google Sheet');
     // async code to report status back to the Google Sheet
     callback(null);
